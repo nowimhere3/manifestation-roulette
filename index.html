@@ -5,18 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#1f2937" />
   <title>Manifestation Roulette — PWA</title>
+  <!-- Tailwind via CDN (no build step) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes fadeUp { from { opacity: 0; transform: translateY(6px)} to {opacity:1; transform: translateY(0)} }
     .fade-up { animation: fadeUp .25s ease-out }
   </style>
+  <!-- Manifest will be attached dynamically so this stays single-file deployable -->
   <link id="manifestLink" rel="manifest" href="data:application/manifest+json,{}">
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
   <div class="mx-auto max-w-3xl px-4 py-10">
     <header class="mb-6 text-center">
       <h1 class="text-3xl font-semibold tracking-tight">Manifestation Roulette</h1>
-      <p class="mt-2 text-slate-300">Spin to get a method. Shows the name first. Reveal details or spin again.</p>
+      <p class="mt-2 text-slate-300">Spin to get a method. It shows the name first. Reveal details or spin again.</p>
       <div id="installHint" class="mt-3 hidden text-xs text-slate-400">Tip: On Android Chrome, open the ⋮ menu and tap <span class="italic">Install app</span>.</div>
     </header>
 
@@ -68,8 +70,110 @@
   </div>
 
   <script>
-    const methods = [ /* same methods array here, unchanged */ ];
+    // ——— Methods data ———
+    const methods = [
+      {
+        name: "5-Minute End State",
+        aka: "Neville Goddard’s ‘Assume the Feeling of the Wish Fulfilled’ (applied)",
+        purpose: "Train your nervous system to embody the reality you want before it arrives.",
+        when: "Daily, ideally in a quiet moment.",
+        duration: "5 minutes",
+        steps: [
+          "Sit comfortably and close your eyes.",
+          "Imagine it is the day after your desired reality has begun.",
+          "Engage all five senses—see, hear, smell, taste, and feel the scene fully.",
+          "Feel the gratitude, calm, and abundance as if it’s already real.",
+          "Set a timer for 5 minutes and stay ‘in character’ until it goes off."
+        ]
+      },
+      {
+        name: "Morning Vibe Tuneup",
+        purpose: "Deliberately set your emotional frequency so you become magnetic to aligned opportunities.",
+        when: "First thing in the morning, before touching your phone.",
+        duration: "—",
+        steps: [
+          "Choose the three emotions you want to live by today.",
+          "Put on music that evokes those emotions.",
+          "Move your body and breathe deeply until the feelings are embodied.",
+          "Carry that energy straight into the first task of your day."
+        ]
+      },
+      {
+        name: "Subconscious Reset (Referenced Resource)",
+        purpose: "Identify limiting beliefs operating below awareness and convert them into empowering beliefs.",
+        when: "Whenever you notice recurring blocks in any area (money, relationships, health, etc.).",
+        duration: "—",
+        steps: [
+          "Identify the limiting beliefs that are active beneath the surface.",
+          "Rewrite each one into a specific, empowering belief you prefer to hold."
+        ],
+        notes: "The video references a downloadable guide; this summary captures only the core actions mentioned."
+      },
+      {
+        name: "Universe To-Do List",
+        purpose: "Release over-control and focus on actions you can directly take while allowing the ‘how’ to unfold.",
+        when: "Use any time you feel attached to a single outcome or overwhelmed by variables outside your control.",
+        duration: "—",
+        steps: [
+          "Divide a page down the middle.",
+          "Left column: write ‘My Job’ and list concrete actions within your control.",
+          "Right column: write ‘Universe’s Job’ and list everything outside your control.",
+          "Commit to act only on the left column and let the right column unfold on its own."
+        ]
+      },
+      {
+        name: "Gratitude Cascade",
+        purpose: "Elevate and stabilize your baseline state so more to be grateful for flows in.",
+        when: "Immediately after waking; continue threading gratitude through the day.",
+        duration: "—",
+        steps: [
+          "List three things you’re genuinely grateful for right now (simple is fine).",
+          "For each, say why you’re grateful for it and how it makes you feel.",
+          "Let the felt sense of gratitude ‘spill over’ into the very next activity.",
+          "Continue the cascade across the day."
+        ]
+      },
+      {
+        name: "60-Second Presence Reset",
+        purpose: "Train moment-to-moment awareness so you notice synchronicities and opportunities.",
+        when: "Tie to a mundane activity you do multiple times per day (e.g., washing hands, brushing teeth).",
+        duration: "60 seconds per rep",
+        steps: [
+          "While doing the chosen activity, give it your full attention for 60 seconds.",
+          "Allow thoughts to come and go without chasing them.",
+          "Stay immersed in the raw sensations of the activity.",
+          "Repeat every time you perform that activity to build the present-moment habit."
+        ]
+      },
+      {
+        name: "Highest Excitement Formula",
+        aka: "Bashar’s Formula",
+        purpose: "Raise your frequency by acting on what most excites you without attachment to outcomes.",
+        when: "In each moment, when choosing among available options.",
+        duration: "—",
+        steps: [
+          "Identify the option that most excites you right now.",
+          "Act on it immediately and do it to the best of your ability.",
+          "Take it as far as you can until you naturally can’t proceed further.",
+          "Hold absolutely no insistence on any particular outcome."
+        ]
+      },
+      {
+        name: "Mirror Journal",
+        purpose: "Use external triggers as mirrors to reveal and update the beliefs shaping your reality.",
+        when: "Any time something in your environment bothers or hooks you emotionally.",
+        duration: "—",
+        steps: [
+          "Pause and ask: ‘Where inside me is this being reflected from?’",
+          "Ask: ‘What belief might this be showing me?’",
+          "Free-write for 3 minutes without editing to surface the belief.",
+          "Close by answering: ‘What would I rather believe?’",
+          "State the new belief out loud three times."
+        ]
+      }
+    ];
 
+    // ——— UI wiring ———
     const randomBtn = document.getElementById('randomBtn');
     const revealBtn = document.getElementById('revealBtn');
     const hideBtn   = document.getElementById('hideBtn');
@@ -93,7 +197,7 @@
     function pickRandomIndex() {
       if (methods.length <= 1) return 0;
       let idx = Math.floor(Math.random() * methods.length);
-      if (idx === currentIndex) idx = (idx + 1) % methods.length;
+      if (idx === currentIndex) idx = (idx + 1) % methods.length; // avoid immediate repeat
       return idx;
     }
 
@@ -129,16 +233,19 @@
     revealBtn.addEventListener('click', () => { if (currentIndex >= 0) showDetails(methods[currentIndex]); });
     hideBtn.addEventListener('click', () => { if (currentIndex >= 0) showNameOnly(methods[currentIndex]); });
 
+    // Keyboard shortcuts: r = random, s = show/hide
     window.addEventListener('keydown', (e) => {
       if (e.key.toLowerCase() === 'r') randomBtn.click();
       if (e.key.toLowerCase() === 's') { if (!details.classList.contains('hidden')) hideBtn.click(); else revealBtn.click(); }
     });
 
+    // ——— Single-file PWA bootstrapping ———
+    // Generate icons at runtime so we don't need external files
     function makeIconCanvas(size) {
       const c = document.createElement('canvas');
       c.width = c.height = size;
       const ctx = c.getContext('2d');
-      ctx.fillStyle = '#4f46e5';
+      ctx.fillStyle = '#4f46e5'; // indigo-600
       ctx.fillRect(0, 0, size, size);
       ctx.font = Math.floor(size * 0.55) + 'px system-ui, Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, sans-serif';
       ctx.textAlign = 'center';
@@ -151,11 +258,12 @@
     const icon192 = makeIconCanvas(192);
     const icon512 = makeIconCanvas(512);
 
+    // Build and attach the web manifest via Blob URL
     const manifest = {
       name: 'Manifestation Roulette',
       short_name: 'Manifestation',
       description: 'Spin to get a manifestation method; reveal steps or spin again.',
-      start_url: './?utm_source=pwa',
+      start_url: './?v=2&utm_source=pwa',
       scope: './',
       display: 'standalone',
       background_color: '#0b1220',
@@ -170,13 +278,50 @@
     const manifestURL = URL.createObjectURL(manifestBlob);
     document.getElementById('manifestLink').setAttribute('href', manifestURL);
 
-    const swCode = `/* same service worker code here */`;
+    // Service Worker code (embedded as a string)
+    const swCode = `
+      const CACHE = 'manifestation-roulette-v2';
+      const ASSETS = [ './' ];
+
+      self.addEventListener('install', evt => {
+        evt.waitUntil(
+          caches.open(CACHE)
+            .then(c => c.addAll(ASSETS))
+            .then(() => self.skipWaiting())
+        );
+      });
+
+      self.addEventListener('activate', evt => {
+        evt.waitUntil(
+          caches.keys().then(keys =>
+            Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+          ).then(() => self.clients.claim())
+        );
+      });
+
+      self.addEventListener('fetch', evt => {
+        const req = evt.request;
+        evt.respondWith(
+          caches.match(req).then(cached =>
+            cached || fetch(req).then(resp => {
+              try {
+                const clone = resp.clone();
+                caches.open(CACHE).then(c => c.put(req, clone));
+              } catch (e) {}
+              return resp;
+            }).catch(() => caches.match('./'))
+          )
+        );
+      });
+    `;
+
     if ('serviceWorker' in navigator) {
       const swBlob = new Blob([swCode], { type: 'text/javascript' });
       const swURL = URL.createObjectURL(swBlob);
       navigator.serviceWorker.register(swURL, { scope: './' }).catch(console.error);
     }
 
+    // Optional install prompt UX (Android Chrome)
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
@@ -192,7 +337,9 @@
       installBtn.classList.add('hidden');
     });
 
+    // If no prompt is available, show hint for manual install path
     setTimeout(() => { if (!deferredPrompt) installHint.classList.remove('hidden'); }, 1500);
   </script>
 </body>
 </html>
+
